@@ -41,8 +41,12 @@ function WorkoutDay() {
     const [open, setOpen] = useState(false);
     const [exerciseName, setExerciseName] = useState("");
     const [customExerciseName, setCustomExerciseName] = useState("");
-    const [reps, setReps] = useState("");
-    const [weight, setWeight] = useState("");
+    const [setCount, setSetCount] = useState("3");
+    const [setEntries, setSetEntries] = useState([
+        { reps: "", weight: "" },
+        { reps: "", weight: "" },
+        { reps: "", weight: "" },
+    ]);
     const [exercises, setExercises] = useState([]);
 
     const availableExerciseOptions = exerciseOptionsByDay[day] || [];
@@ -50,6 +54,38 @@ function WorkoutDay() {
     const finalExerciseName = isCustomExercise
         ? customExerciseName.trim()
         : exerciseName;
+
+    const getExerciseSets = (exercise) => {
+        if (exercise.sets && exercise.sets.length > 0) {
+            return exercise.sets;
+        }
+
+        return [{ setNumber: 1, reps: exercise.reps, weight: exercise.weight }];
+    };
+
+    const isAllSetDataFilled = setEntries.every(
+        (entry) => entry.reps && entry.weight,
+    );
+
+    const handleSetCountChange = (value) => {
+        const count = Number(value);
+        setSetCount(value);
+        setSetEntries((previousEntries) =>
+            Array.from(
+                { length: count },
+                (_, index) =>
+                    previousEntries[index] || { reps: "", weight: "" },
+            ),
+        );
+    };
+
+    const handleSetEntryChange = (index, field, value) => {
+        setSetEntries((previousEntries) =>
+            previousEntries.map((entry, entryIndex) =>
+                entryIndex === index ? { ...entry, [field]: value } : entry,
+            ),
+        );
+    };
 
     // LOAD SAVED DATA
     useEffect(() => {
@@ -59,13 +95,41 @@ function WorkoutDay() {
 
     // SAVE DATA
     const handleAddExercise = () => {
-        const newExercise = {
-            name: finalExerciseName,
-            reps,
-            weight,
-        };
+        const sets = setEntries.map((entry, index) => ({
+            setNumber: index + 1,
+            reps: entry.reps,
+            weight: entry.weight,
+        }));
 
-        const updatedExercises = [...exercises, newExercise];
+        const normalizedName = finalExerciseName.toLowerCase();
+        const existingExerciseIndex = exercises.findIndex(
+            (exercise) => exercise.name?.toLowerCase() === normalizedName,
+        );
+
+        let updatedExercises;
+
+        if (existingExerciseIndex >= 0) {
+            updatedExercises = [...exercises];
+            const existingExercise = updatedExercises[existingExerciseIndex];
+            const normalizedSets = sets.map((setItem, index) => ({
+                ...setItem,
+                setNumber: index + 1,
+            }));
+
+            updatedExercises[existingExerciseIndex] = {
+                ...existingExercise,
+                name: existingExercise.name,
+                sets: normalizedSets,
+            };
+        } else {
+            const newExercise = {
+                name: finalExerciseName,
+                sets,
+            };
+
+            updatedExercises = [...exercises, newExercise];
+        }
+
         setExercises(updatedExercises);
 
         const saved = JSON.parse(localStorage.getItem("workouts")) || {};
@@ -75,8 +139,12 @@ function WorkoutDay() {
 
         setExerciseName("");
         setCustomExerciseName("");
-        setReps("");
-        setWeight("");
+        setSetCount("3");
+        setSetEntries([
+            { reps: "", weight: "" },
+            { reps: "", weight: "" },
+            { reps: "", weight: "" },
+        ]);
         setOpen(false);
     };
 
@@ -128,33 +196,44 @@ function WorkoutDay() {
                 </Card>
             )}
 
-            {exercises.map((ex, index) => (
-                <Card
-                    className="workout-day-card"
-                    sx={{ mt: 2, animationDelay: `${140 + index * 70}ms` }}
-                    key={index}
-                >
-                    <CardContent>
-                        <Stack
-                            direction="row"
-                            justifyContent="space-between"
-                            alignItems="center"
-                        >
+            {exercises.map((ex, index) => {
+                const exerciseSets = getExerciseSets(ex);
+
+                return (
+                    <Card
+                        className="workout-day-card"
+                        sx={{ mt: 2, animationDelay: `${140 + index * 70}ms` }}
+                        key={index}
+                    >
+                        <CardContent>
                             <Typography variant="h6" sx={{ fontWeight: 700 }}>
                                 {ex.name}
                             </Typography>
-                            <Chip
-                                label={`${ex.reps} reps`}
-                                size="small"
-                                color="secondary"
-                            />
-                        </Stack>
-                        <Typography color="text.secondary" sx={{ mt: 0.7 }}>
-                            Weight: {ex.weight} kg
-                        </Typography>
-                    </CardContent>
-                </Card>
-            ))}
+
+                            <Typography
+                                color="text.secondary"
+                                sx={{ mt: 0.5, fontSize: "0.9rem" }}
+                            >
+                                {exerciseSets.length} sets
+                            </Typography>
+
+                            <Stack spacing={0.4} sx={{ mt: 0.9 }}>
+                                {exerciseSets.map((setItem, setIndex) => (
+                                    <Typography
+                                        key={setIndex}
+                                        color="text.secondary"
+                                        sx={{ fontSize: "0.95rem" }}
+                                    >
+                                        Set {setItem.setNumber || setIndex + 1}:{" "}
+                                        {setItem.reps} reps x {setItem.weight}{" "}
+                                        kg
+                                    </Typography>
+                                ))}
+                            </Stack>
+                        </CardContent>
+                    </Card>
+                );
+            })}
 
             <Dialog
                 open={open}
@@ -196,29 +275,64 @@ function WorkoutDay() {
 
                     <TextField
                         select
-                        label="Reps"
+                        label="Sets"
                         fullWidth
                         margin="normal"
-                        value={reps}
-                        onChange={(e) => setReps(e.target.value)}
+                        value={setCount}
+                        onChange={(e) => handleSetCountChange(e.target.value)}
                     >
-                        <MenuItem value="15">15</MenuItem>
-                        <MenuItem value="10">10</MenuItem>
+                        <MenuItem value="1">1 Set</MenuItem>
+                        <MenuItem value="2">2 Sets</MenuItem>
+                        <MenuItem value="3">3 Sets</MenuItem>
                     </TextField>
 
-                    <TextField
-                        select
-                        label="Weight"
-                        fullWidth
-                        margin="normal"
-                        value={weight}
-                        onChange={(e) => setWeight(e.target.value)}
-                    >
-                        <MenuItem value="5">5kg</MenuItem>
-                        <MenuItem value="10">10kg</MenuItem>
-                        <MenuItem value="15">15kg</MenuItem>
-                        <MenuItem value="20">20kg</MenuItem>
-                    </TextField>
+                    {setEntries.map((entry, index) => (
+                        <Stack
+                            direction="row"
+                            spacing={1.2}
+                            key={index}
+                            sx={{ mt: 1 }}
+                        >
+                            <TextField
+                                select
+                                label={`Set ${index + 1} Reps`}
+                                fullWidth
+                                value={entry.reps}
+                                onChange={(e) =>
+                                    handleSetEntryChange(
+                                        index,
+                                        "reps",
+                                        e.target.value,
+                                    )
+                                }
+                            >
+                                <MenuItem value="8">8</MenuItem>
+                                <MenuItem value="10">10</MenuItem>
+                                <MenuItem value="12">12</MenuItem>
+                                <MenuItem value="15">15</MenuItem>
+                            </TextField>
+
+                            <TextField
+                                select
+                                label={`Set ${index + 1} Weight`}
+                                fullWidth
+                                value={entry.weight}
+                                onChange={(e) =>
+                                    handleSetEntryChange(
+                                        index,
+                                        "weight",
+                                        e.target.value,
+                                    )
+                                }
+                            >
+                                <MenuItem value="5">5kg</MenuItem>
+                                <MenuItem value="10">10kg</MenuItem>
+                                <MenuItem value="15">15kg</MenuItem>
+                                <MenuItem value="20">20kg</MenuItem>
+                                <MenuItem value="25">25kg</MenuItem>
+                            </TextField>
+                        </Stack>
+                    ))}
                 </DialogContent>
 
                 <DialogActions>
@@ -226,7 +340,11 @@ function WorkoutDay() {
                     <Button
                         onClick={handleAddExercise}
                         variant="contained"
-                        disabled={!finalExerciseName || !reps || !weight}
+                        disabled={
+                            !finalExerciseName ||
+                            !setCount ||
+                            !isAllSetDataFilled
+                        }
                     >
                         Add
                     </Button>
