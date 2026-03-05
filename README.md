@@ -1,16 +1,85 @@
-# React + Vite
+# Gym Tracker
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Workout logging web app built with React + Vite + MUI.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+## Google Sheets Sync
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The app can sync every saved workout entry to Google Sheets through a Google Apps Script Web App URL.
 
-## Expanding the ESLint configuration
+### 1. Create `.env`
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Copy `.env.example` to `.env` and set your Apps Script URL:
+
+```env
+VITE_GOOGLE_SHEETS_WEB_APP_URL=https://script.google.com/macros/s/your-deployment-id/exec
+```
+
+Restart dev server after editing `.env`.
+
+### 2. Create a Google Sheet
+
+Create columns in row 1:
+
+```text
+submittedAt | day | exerciseName | setNumber | reps | weight | source
+```
+
+### 3. Create Apps Script Web App
+
+In the Google Sheet:
+`Extensions` -> `Apps Script`, then paste this code:
+
+```javascript
+function doPost(e) {
+    try {
+        var body = JSON.parse(e.postData.contents || "{}");
+        var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+        var sets = body.sets || [];
+
+        sets.forEach(function (setItem) {
+            sheet.appendRow([
+                body.submittedAt || new Date().toISOString(),
+                body.day || "",
+                body.exerciseName || "",
+                setItem.setNumber || "",
+                setItem.reps || "",
+                setItem.weight || "",
+                body.source || "gym-tracker-web",
+            ]);
+        });
+
+        return ContentService.createTextOutput(
+            JSON.stringify({ ok: true }),
+        ).setMimeType(ContentService.MimeType.JSON);
+    } catch (error) {
+        return ContentService.createTextOutput(
+            JSON.stringify({ ok: false, error: String(error) }),
+        ).setMimeType(ContentService.MimeType.JSON);
+    }
+}
+```
+
+Deploy:
+`Deploy` -> `New deployment` -> `Web app`
+
+Recommended settings:
+
+- Execute as: `Me`
+- Who has access: `Anyone`
+
+Copy deployment URL and use it in `.env`.
+
+### 4. Verify
+
+1. Open app.
+2. Add an exercise with sets.
+3. Confirm new rows appear in sheet.
+
+If URL is missing or API fails, app still saves locally in browser storage.

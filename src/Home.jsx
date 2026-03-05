@@ -101,6 +101,17 @@ function Home() {
                     </Grid>
                 ))}
             </Grid>
+
+            <Box
+                sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: "22px",
+                }}
+            >
+                Made By LOKYA 💘
+            </Box>
         </Container>
     );
 }

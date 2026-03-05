@@ -21,6 +21,7 @@ import AddCircleRoundedIcon from "@mui/icons-material/AddCircleRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import FitnessCenterRoundedIcon from "@mui/icons-material/FitnessCenterRounded";
 import { useNavigate } from "react-router-dom";
+import { syncWorkoutToGoogleSheets } from "./services/googleSheets";
 
 const CUSTOM_EXERCISE_OPTION = "__custom__";
 
@@ -48,6 +49,7 @@ function WorkoutDay() {
         { reps: "", weight: "" },
     ]);
     const [exercises, setExercises] = useState([]);
+    const [syncStatus, setSyncStatus] = useState("");
 
     const availableExerciseOptions = exerciseOptionsByDay[day] || [];
     const isCustomExercise = exerciseName === CUSTOM_EXERCISE_OPTION;
@@ -94,7 +96,7 @@ function WorkoutDay() {
     }, [day]);
 
     // SAVE DATA
-    const handleAddExercise = () => {
+    const handleAddExercise = async () => {
         const sets = setEntries.map((entry, index) => ({
             setNumber: index + 1,
             reps: entry.reps,
@@ -136,6 +138,25 @@ function WorkoutDay() {
         saved[day] = updatedExercises;
 
         localStorage.setItem("workouts", JSON.stringify(saved));
+
+        try {
+            const syncResult = await syncWorkoutToGoogleSheets({
+                day,
+                exerciseName: finalExerciseName,
+                sets,
+            });
+
+            if (syncResult.skipped) {
+                setSyncStatus(
+                    "Saved locally. Add Google Sheets URL to enable cloud sync.",
+                );
+            } else {
+                setSyncStatus("Saved locally and synced to Google Sheets.");
+            }
+        } catch (error) {
+            console.error(error);
+            setSyncStatus("Saved locally. Google Sheets sync failed.");
+        }
 
         setExerciseName("");
         setCustomExerciseName("");
@@ -180,6 +201,15 @@ function WorkoutDay() {
                 >
                     Add Exercise
                 </Button>
+
+                {syncStatus && (
+                    <Typography
+                        color="text.secondary"
+                        sx={{ mt: 1.3, fontSize: "0.92rem" }}
+                    >
+                        {syncStatus}
+                    </Typography>
+                )}
             </Box>
 
             {exercises.length === 0 && (
@@ -238,7 +268,8 @@ function WorkoutDay() {
             <Dialog
                 open={open}
                 onClose={() => setOpen(false)}
-                PaperProps={{ sx: { borderRadius: 3, p: 0.6 } }}
+                PaperProps={{ sx: { borderRadius: 1, p: 0.1 } }}
+                fullWidth
             >
                 <DialogTitle>Add Exercise</DialogTitle>
 
