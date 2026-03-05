@@ -1,0 +1,62 @@
+#root {
+    min-height: 100vh;
+}
+
+.page-shell {
+    padding-top: 2rem;
+    padding-bottom: 2.8rem;
+}
+
+.hero-card {
+    background: linear-gradient(
+        140deg,
+        rgba(37, 99, 235, 0.12),
+        rgba(13, 148, 136, 0.12)
+    );
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 22px;
+    padding: 1.4rem;
+    box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+    margin-bottom: 1rem;
+}
+
+.workout-day-card {
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    background: linear-gradient(160deg, #ffffff, #f8fafc);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+    transform: translateY(0);
+    transition:
+        transform 220ms ease,
+        box-shadow 220ms ease;
+    animation: slide-fade 420ms ease both;
+}
+
+.workout-day-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.16);
+}
+
+.fade-in-up {
+    animation: slide-fade 500ms ease both;
+}
+
+@keyframes slide-fade {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 600px) {
+    .hero-card {
+        padding: 1.1rem;
+    }
+
+    .page-shell {
+        padding-top: 1.2rem;
+    }
+}
