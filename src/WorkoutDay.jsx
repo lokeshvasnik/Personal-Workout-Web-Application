@@ -15,6 +15,7 @@ import {
     MenuItem,
     Stack,
     IconButton,
+    CircularProgress,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import AddCircleRoundedIcon from "@mui/icons-material/AddCircleRounded";
@@ -50,6 +51,7 @@ function WorkoutDay() {
     ]);
     const [exercises, setExercises] = useState([]);
     const [syncStatus, setSyncStatus] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
 
     const availableExerciseOptions = exerciseOptionsByDay[day] || [];
     const isCustomExercise = exerciseName === CUSTOM_EXERCISE_OPTION;
@@ -97,6 +99,8 @@ function WorkoutDay() {
 
     // SAVE DATA
     const handleAddExercise = async () => {
+        setIsSaving(true);
+
         const sets = setEntries.map((entry, index) => ({
             setNumber: index + 1,
             reps: entry.reps,
@@ -167,6 +171,8 @@ function WorkoutDay() {
             { reps: "", weight: "" },
         ]);
         setOpen(false);
+
+        setIsSaving(false);
     };
 
     return (
@@ -357,6 +363,7 @@ function WorkoutDay() {
                                 }
                             >
                                 <MenuItem value="5">5kg</MenuItem>
+                                <MenuItem value="7">7kg</MenuItem>
                                 <MenuItem value="10">10kg</MenuItem>
                                 <MenuItem value="15">15kg</MenuItem>
                                 <MenuItem value="20">20kg</MenuItem>
@@ -372,12 +379,18 @@ function WorkoutDay() {
                         onClick={handleAddExercise}
                         variant="contained"
                         disabled={
+                            isSaving ||
                             !finalExerciseName ||
                             !setCount ||
                             !isAllSetDataFilled
                         }
+                        startIcon={
+                            isSaving ? (
+                                <CircularProgress color="inherit" size={16} />
+                            ) : null
+                        }
                     >
-                        Add
+                        {isSaving ? "Saving..." : "Add"}
                     </Button>
                 </DialogActions>
             </Dialog>
