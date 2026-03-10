@@ -36,6 +36,8 @@ export async function syncWorkoutToGoogleSheets({
         userName: resolvedUser,
         username: resolvedUser,
         user: resolvedUser,
+        name: resolvedUser,
+        athlete: resolvedUser,
         day,
         exerciseName,
         sets: sets.map((setItem, index) => ({
