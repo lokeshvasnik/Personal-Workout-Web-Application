@@ -1,5 +1,7 @@
 import {
+    Avatar,
     Box,
+    Button,
     Card,
     CardContent,
     Chip,
@@ -37,7 +39,7 @@ const workoutPhotos = [
     },
 ];
 
-function Home() {
+function Home({ selectedUser, onChangeUser }) {
     const navigate = useNavigate();
     const [currentPhoto, setCurrentPhoto] = useState(0);
 
@@ -78,6 +80,14 @@ function Home() {
                         variant="outlined"
                         size="small"
                     />
+                    {selectedUser && (
+                        <Chip
+                            avatar={<Avatar>{selectedUser.charAt(0)}</Avatar>}
+                            label={selectedUser}
+                            size="small"
+                            color="secondary"
+                        />
+                    )}
                 </Stack>
 
                 <Typography
@@ -94,6 +104,17 @@ function Home() {
                     Pick a day, log your lifts, and keep steady progress with a
                     clean workout journal.
                 </Typography>
+
+                {selectedUser && (
+                    <Button
+                        variant="text"
+                        size="small"
+                        onClick={onChangeUser}
+                        sx={{ mt: 1, px: 0 }}
+                    >
+                        Switch user
+                    </Button>
+                )}
             </Box>
 
             <Box

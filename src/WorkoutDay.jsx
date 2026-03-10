@@ -25,6 +25,7 @@ import { useNavigate } from "react-router-dom";
 import { syncWorkoutToGoogleSheets } from "./services/googleSheets";
 
 const CUSTOM_EXERCISE_OPTION = "__custom__";
+const getWorkoutsStorageKey = (selectedUser) => `workouts-${selectedUser}`;
 
 const exerciseOptionsByDay = {
     Monday: ["Bench Press", "Shoulder Press", "Dips", "Tricep Pushdown"],
@@ -36,7 +37,7 @@ const exerciseOptionsByDay = {
     Sunday: ["Sit Up", "Leg Raise", "Russian Twist", "Mountain Climber"],
 };
 
-function WorkoutDay() {
+function WorkoutDay({ selectedUser }) {
     const { day } = useParams();
     const navigate = useNavigate();
 
@@ -93,9 +94,17 @@ function WorkoutDay() {
 
     // LOAD SAVED DATA
     useEffect(() => {
-        const saved = JSON.parse(localStorage.getItem("workouts")) || {};
+        if (!selectedUser) {
+            setExercises([]);
+            return;
+        }
+
+        const saved =
+            JSON.parse(
+                localStorage.getItem(getWorkoutsStorageKey(selectedUser)),
+            ) || {};
         setExercises(saved[day] || []);
-    }, [day]);
+    }, [day, selectedUser]);
 
     // SAVE DATA
     const handleAddExercise = async () => {
@@ -138,13 +147,20 @@ function WorkoutDay() {
 
         setExercises(updatedExercises);
 
-        const saved = JSON.parse(localStorage.getItem("workouts")) || {};
+        const saved =
+            JSON.parse(
+                localStorage.getItem(getWorkoutsStorageKey(selectedUser)),
+            ) || {};
         saved[day] = updatedExercises;
 
-        localStorage.setItem("workouts", JSON.stringify(saved));
+        localStorage.setItem(
+            getWorkoutsStorageKey(selectedUser),
+            JSON.stringify(saved),
+        );
 
         try {
             const syncResult = await syncWorkoutToGoogleSheets({
+                selectedUser,
                 day,
                 exerciseName: finalExerciseName,
                 sets,
@@ -195,7 +211,7 @@ function WorkoutDay() {
                     </Stack>
                     <Chip
                         icon={<FitnessCenterRoundedIcon />}
-                        label={`${exercises.length} Exercises`}
+                        label={`${selectedUser || "No User"} • ${exercises.length} Exercises`}
                     />
                 </Stack>
 
@@ -380,6 +396,7 @@ function WorkoutDay() {
                         variant="contained"
                         disabled={
                             isSaving ||
+                            !selectedUser ||
                             !finalExerciseName ||
                             !setCount ||
                             !isAllSetDataFilled

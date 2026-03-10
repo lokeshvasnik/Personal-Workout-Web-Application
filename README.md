@@ -28,7 +28,7 @@ Restart dev server after editing `.env`.
 Create columns in row 1:
 
 ```text
-submittedAt | day | exerciseName | setNumber | reps | weight | source
+submittedAt | userName | day | exerciseName | setNumber | reps | weight | source
 ```
 
 ### 3. Create Apps Script Web App
@@ -46,6 +46,10 @@ function doPost(e) {
         sets.forEach(function (setItem) {
             sheet.appendRow([
                 body.submittedAt || new Date().toISOString(),
+                body.userName ||
+                    body.username ||
+                    body.selectedUser ||
+                    "unknown",
                 body.day || "",
                 body.exerciseName || "",
                 setItem.setNumber || "",
